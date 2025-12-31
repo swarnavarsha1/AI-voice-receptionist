@@ -1,5 +1,5 @@
 student_code,first_name,last_name,email,phone,emergency_contact,emergency_contact_relationship,emergency_contact_phone,skill_level,notes
-STU001,Vetri,Selvan,emma.smith@example.com,"+146987826264",Luke Smith,Mother,"+146987826264",Beginner I,"Focus on water comfort and basic floating"
+STU001,Vetri,Selvan,emma.smith@example.com,"+14698786264",Luke Smith,Mother,"+14698786264",Beginner I,"Focus on water comfort and basic floating"
 STU002,Liam,Johnson,liam.johnson@example.com,"+146987826264",Madison Johnson,Father,"+15552999136",Beginner II,"Working on freestyle technique"
 STU003,Olivia,Williams,olivia.williams@example.com,"+15554488111",Ava Williams,Father,"+15553388032",Beginner I,"Building confidence in deep water"
 STU004,Noah,Brown,noah.brown@example.com,"+15557017702",Victoria Brown,Guardian,"+15557544256",Advanced I,"Preparing for regional competition"

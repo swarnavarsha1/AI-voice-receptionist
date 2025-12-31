@@ -19,24 +19,29 @@ async function transferActiveCall(ultravoxCallId, targetNumber) {
         if (!callData || !callData.twilioCallSid) {
             throw new Error('Call not found or invalid CallSid');
         }
-
-        // First create a new TwiML to handle the transfer
-        const twiml = new twilio.twiml.VoiceResponse();
+        // Use the target number or fall back to default
         const finalDestination = targetNumber || process.env.DESTINATION_PHONE_NUMBER;
         console.log(`Transferring call ${ultravoxCallId} to ${finalDestination}`);
-        
-        twiml.dial().number(finalDestination);
-
+        console.log(`Twilio CallSid: ${callData.twilioCallSid}`);
+        // Create TwiML for the transfer
+        const twiml = new twilio.twiml.VoiceResponse();
+        twiml.say('Please hold while I transfer your call');
+        const dial = twiml.dial({
+            callerId: process.env.TWILIO_PHONE_NUMBER // Must be your verified Twilio number
+        });
+        dial.number(finalDestination);
+        console.log('Generated TwiML:', twiml.toString());
+        // Update the active call with new TwiML
         const updatedCall = await client.calls(callData.twilioCallSid)
             .update({ twiml: twiml.toString() });
-
+        console.log('Transfer initiated. Call status:', updatedCall.status);
         return {
             status: 'success',
             message: 'Call transfer initiated',
             callDetails: updatedCall
         };
-
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Error transferring call:', error);
         throw {
             status: 'error',
@@ -114,34 +119,48 @@ router.post('/incoming', async (req, res) => {
   
 router.post('/transferCall', async (req, res) => {
     const { callId, firstName, lastName, contactType } = req.body;
-    const db = req.app.locals.db; // Access the DB instance
-
+    const db = req.app.locals.db;
     console.log(`Transfer request for ${firstName} ${lastName} (${contactType})`);
-
     try {
-        // Step A: Lookup the student
         let targetNumber = null;
-        
         if (firstName && lastName) {
             const student = db.getStudentByName(firstName, lastName);
             if (student) {
+                // Get the appropriate phone number
                 if (contactType === 'emergency') {
                     targetNumber = student.emergency_contact_phone;
                 } else {
                     targetNumber = student.phone;
                 }
+                console.log(`Found student: ${firstName} ${lastName}`);
+                console.log(`Target phone: ${targetNumber}`);
+                console.log(`Contact type: ${contactType}`);
             } else {
-                console.warn(`Student ${firstName} ${lastName} not found.`);
+                console.warn(`Student ${firstName} ${lastName} not found in database`);
+                return res.status(404).json({ 
+                    error: 'Student not found',
+                    message: `No student found with name ${firstName} ${lastName}` 
+                });
             }
         }
-
-        // Step B: Transfer (will fall back to default number if targetNumber is null)
+        // Validate we have a phone number
+        if (!targetNumber) {
+            console.error('No target phone number available');
+            return res.status(400).json({ 
+                error: 'No phone number available',
+                message: `No ${contactType} phone number found for ${firstName} ${lastName}` 
+            });
+        }
+        // Initiate the transfer
         const result = await transferActiveCall(callId, targetNumber);
         res.json(result);
-
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Transfer failed:', error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ 
+            error: 'Transfer failed',
+            message: error.message 
+        });
     }
 });
 
