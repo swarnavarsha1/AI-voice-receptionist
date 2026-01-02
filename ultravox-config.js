@@ -11,6 +11,7 @@ Your job is as follows:
 3. Important: you must use the events section below to answer questions about upcoming events at the center.
 4. For more complex questions you MUST use the "infoLookup" tool. Do not make answers up!
 5. If a caller is angry or has a topic that you cannot answer, you can use the "transferCall" tool to hand-off the call to the right department.
+6. If a caller mentions a country name (like "Germany" or "Eesti"), you MUST use the "getCountryInfo" tool to provide facts about it.
 
 #Q&A
 ## CCC location and hours
@@ -81,8 +82,8 @@ const selectedTools = [
       "http": {
           "baseUrlPattern": `${toolsBaseUrl}/twilio/transferCall`,
           "httpMethod": "POST",
-        },
-    },
+        }
+    }
   },
   {
     "temporaryTool": {
@@ -113,6 +114,27 @@ const selectedTools = [
       ],
       "http": {
         "baseUrlPattern": "https://corpus-proxy.vercel.app/api/alpha/corpus/query",
+        "httpMethod": "POST"
+      }
+    }
+  },
+  {
+    "temporaryTool": {
+      "modelToolName": "getCountryInfo",
+      "description": "Look up facts about a country including capital, population, region, and currency. Use this when a user mentions a country name.",
+      "dynamicParameters": [
+        {
+          "name": "countryName",
+          "location": "PARAMETER_LOCATION_BODY",
+          "schema": {
+            "description": "The name of the country (e.g., 'Germany', 'Japan', 'Eesti')",
+            "type": "string"
+          },
+          "required": true
+        }
+      ],
+      "http": {
+        "baseUrlPattern": `${toolsBaseUrl}/twilio/countryInfo`,
         "httpMethod": "POST"
       }
     }

@@ -176,5 +176,67 @@ router.post('/makeOutboundCall', async (req, res) => {
     }
 });
 
+// Route to handle country information requests
+router.post('/countryInfo', async (req, res) => {
+  const { countryName } = req.body;
+  console.log(`Processing country info request for: ${countryName}`);
+
+  try {
+    // 1. Call the REST Countries API
+    const response = await fetch(`https://restcountries.com/v3.1/name/${countryName}`);
+
+    if (!response.ok) {
+      console.warn(`Country API returned status: ${response.status}`);
+      return res.json({
+        result: `I'm sorry, I couldn't find any information for ${countryName}.`
+      });
+    }
+
+    const data = await response.json();
+    const country = data[0]; // The API returns an array, take the first match
+
+    // 2. Extract specific fields based on your requirements
+    const name = country.name?.common || countryName;
+    const region = country.region || "unknown region";
+    
+    // Capital is an array (e.g., ["Berlin"])
+    const capital = (country.capital && country.capital.length > 0) 
+      ? country.capital[0] 
+      : "no official capital";
+
+    // Format Population: Convert 83240525 -> "83.2 million"
+    const rawPop = country.population || 0;
+    let popStr = rawPop.toLocaleString();
+    if (rawPop >= 1_000_000) {
+      popStr = `${(rawPop / 1_000_000).toFixed(1)} million`;
+    }
+
+    // Extract Currency: Handle dynamic keys like "EUR" or "USD"
+    // structure is { "EUR": { "name": "Euro", ... } }
+    let currencyName = "unknown currency";
+    if (country.currencies) {
+      const currencyValues = Object.values(country.currencies);
+      if (currencyValues.length > 0) {
+        currencyName = currencyValues[0].name;
+      }
+    }
+
+    // 3. Construct the voice-friendly sentence
+    // Example: "Germany is a country in Europe. Its capital is Berlin. The population is about 83 million, and the official currency is the Euro."
+    const spokenResponse = `${name} is a country in ${region}. Its capital is ${capital}. The population is about ${popStr}, and the official currency is the ${currencyName}.`;
+
+    console.log(`Generated response: ${spokenResponse}`);
+
+    // Return the result for Ultravox to speak
+    res.json({ result: spokenResponse });
+
+  } catch (error) {
+    console.error('Error fetching country info:', error);
+    res.status(500).json({
+      result: "I'm having trouble accessing the country database right now."
+    });
+  }
+});
+
 export { router, makeOutboundCall };
 
