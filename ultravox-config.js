@@ -12,6 +12,7 @@ Your job is as follows:
 4. For more complex questions you MUST use the "infoLookup" tool. Do not make answers up!
 5. If a caller is angry or has a topic that you cannot answer, you can use the "transferCall" tool to hand-off the call to the right department.
 6. If a caller mentions a country name (like "Germany" or "Eesti"), you MUST use the "getCountryInfo" tool to provide facts about it.
+7. If the caller asks for the current date/time (now, today, yesterday, tomorrow), you MUST use the "getCurrentDateTime" tool.
 
 #Q&A
 ## CCC location and hours
@@ -46,43 +47,44 @@ const selectedTools = [
           "location": "PARAMETER_LOCATION_BODY",
           "schema": {
             "description": "The student's first name",
-            "type": "string",
+            "type": "string"
           },
-          "required": true,
+          "required": true
         },
         {
-            "name": "lastName",
-            "location": "PARAMETER_LOCATION_BODY",
-            "schema": {
-              "description": "The student's last name",
-              "type": "string",
-            },
-            "required": true,
+          "name": "lastName",
+          "location": "PARAMETER_LOCATION_BODY",
+          "schema": {
+            "description": "The student's last name",
+            "type": "string"
+          },
+          "required": true
         },
         {
-            "name": "contactType",
-            "location": "PARAMETER_LOCATION_BODY",
-            "schema": { 
-                "type": "string", 
-                "enum": ["student", "emergency"],
-                "description": "Who to transfer the call to: 'student' for the student's phone, 'emergency' for the parent/emergency contact."
-            },
-            "required": true
+          "name": "contactType",
+          "location": "PARAMETER_LOCATION_BODY",
+          "schema": {
+            "type": "string",
+            "enum": ["student", "emergency"],
+            "description": "Who to transfer the call to: 'student' for the student's phone, 'emergency' for the parent/emergency contact."
+          },
+          "required": true
         },
         {
-            "name": "transferReason",
-            "location": "PARAMETER_LOCATION_BODY",
-            "schema": {
-              "description": "The reason the call is being transferred.",
-              "type": "string",
-            },
-            "required": true,
-        },
+          "name": "transferReason",
+          "location": "PARAMETER_LOCATION_BODY",
+          "schema": {
+            "description": "The reason the call is being transferred.",
+            "type": "string"
+          },
+          "required": true
+        }
       ],
       "http": {
-          "baseUrlPattern": `${toolsBaseUrl}/twilio/transferCall`,
-          "httpMethod": "POST",
-        }
+        // "baseUrlPattern": `${toolsBaseUrl}/twilio/transferCall`,
+        "baseUrlPattern": `${toolsBaseUrl}/pbxware/transferCall`,
+        "httpMethod": "POST"
+      }
     }
   },
   {
@@ -134,19 +136,62 @@ const selectedTools = [
         }
       ],
       "http": {
-        "baseUrlPattern": `${toolsBaseUrl}/twilio/countryInfo`,
+        // "baseUrlPattern": `${toolsBaseUrl}/twilio/countryInfo`,
+        "baseUrlPattern": `${toolsBaseUrl}/pbxware/countryInfo`,
+        "httpMethod": "POST"
+      }
+    }
+  },
+  {
+    "temporaryTool": {
+      "modelToolName": "getCurrentDateTime",
+      "description": "Get the current date/time in the caller's timezone (also returns today/yesterday/tomorrow).",
+      "automaticParameters": [
+        {
+          "name": "callId",
+          "location": "PARAMETER_LOCATION_BODY",
+          "knownValue": "KNOWN_PARAM_CALL_ID"
+        }
+      ],
+      "dynamicParameters": [
+        {
+          "name": "timeZone",
+          "location": "PARAMETER_LOCATION_BODY",
+          "schema": {
+            "type": "string",
+            "description": "Optional IANA timezone like 'America/Los_Angeles'. If omitted, server/call defaults are used."
+          },
+          "required": false
+        }
+      ],
+      "http": {
+        "baseUrlPattern": `${toolsBaseUrl}/time/now`,
         "httpMethod": "POST"
       }
     }
   }
 ];
 
+// export const ULTRAVOX_CALL_CONFIG = {
+//   systemPrompt: SYSTEM_PROMPT,
+//   model: 'fixie-ai/ultravox',
+//   voice: 'Mark',
+//   temperature: 0.3,
+//   firstSpeaker: 'FIRST_SPEAKER_AGENT',
+//   selectedTools: selectedTools,
+//   medium: { "twilio": {} }
+// };
+
+
 export const ULTRAVOX_CALL_CONFIG = {
-    systemPrompt: SYSTEM_PROMPT,
-    model: 'fixie-ai/ultravox',
-    voice: 'Mark',
-    temperature: 0.3,
-    firstSpeaker: 'FIRST_SPEAKER_AGENT',
-    selectedTools: selectedTools,
-    medium: { "twilio": {} }
+  systemPrompt: SYSTEM_PROMPT,
+  model: 'fixie-ai/ultravox',
+  voice: 'Mark',
+  temperature: 0.3,
+  firstSpeaker: 'FIRST_SPEAKER_AGENT',
+  selectedTools: selectedTools,
+  // CHANGE THIS SECTION
+  medium: {
+    sip: {} // We leave this empty for incoming; we configure outgoing dynamically
+  }
 };

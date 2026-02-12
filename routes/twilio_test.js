@@ -11,7 +11,14 @@ const router = express.Router();
 
 // Hack: Dictionary to store Twilio CallSid and Ultravox Call ID mapping
 // In production you will want to replace this with something more durable
-const activeCalls = new Map();
+//const activeCalls = new Map();
+export const activeCalls = new Map();
+
+function guessTimeZoneFromTwilioWebhook(body) {
+  // Best practical fallback (CCC is Seattle)
+  return process.env.DEFAULT_TIME_ZONE || "America/Los_Angeles";
+}
+
 
 async function transferActiveCall(ultravoxCallId, targetNumber) {
     try {
@@ -51,7 +58,7 @@ async function transferActiveCall(ultravoxCallId, targetNumber) {
     }
 }
 
-async function makeOutboundCall({ phoneNumber, systemPrompt, selectedTools }) {
+async function makeOutboundCall({ phoneNumber, systemPrompt, selectedTools, timeZone }) {
     try {
       console.log('Creating outbound call...');
       
@@ -76,7 +83,9 @@ async function makeOutboundCall({ phoneNumber, systemPrompt, selectedTools }) {
       // Store the mapping
       activeCalls.set(callId, {
         twilioCallSid: call.sid,
-        type: 'outbound'
+        type: 'outbound',
+        to: phoneNumber,
+        timeZone: timeZone || process.env.DEFAULT_TIME_ZONE || "America/Los_Angeles",
       });
   
       return { callId, twilioCallSid: call.sid };
@@ -94,11 +103,15 @@ router.post('/incoming', async (req, res) => {
       
       const response = await createUltravoxCall(ULTRAVOX_CALL_CONFIG);
       
+      const timeZone = guessTimeZoneFromTwilioWebhook(req.body);
+
       activeCalls.set(response.callId, {
         twilioCallSid,
-        type: 'inbound'
+        type: 'inbound',
+        from: req.body.From,
+        timeZone,
       });
-  
+
       const twiml = new twilio.twiml.VoiceResponse();
       const connect = twiml.connect();
       connect.stream({

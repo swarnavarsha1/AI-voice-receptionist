@@ -20,11 +20,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true })); 
 
 // Import our routes and mount them
-import { router as twilioRoutes } from './routes/twilio.js';
+// import { router as twilioRoutes } from './routes/twilio.js';
+import { router as timeRoutes } from './routes/time.js';
+import { router as pbxRoutes } from './routes/pbxware.js';
 import { router as calRoutes } from './routes/cal.js';
 
-app.use('/twilio/', twilioRoutes);
+// app.use('/twilio/', twilioRoutes);
+app.use('/pbxware/', pbxRoutes);
 app.use('/cal/', calRoutes);
+app.use('/time/', timeRoutes);
 
 // Start server
 app.listen(port, () => {
